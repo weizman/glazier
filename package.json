@@ -1,7 +1,7 @@
 {
   "name": "glazier",
   "version": "1.0.0",
-  "description": "hook all windows under top",
+  "description": "register to the creation event of any newborn window in the webpage",
   "main": "src/index.js",
   "devDependencies": {
     "@babel/core": "^7.13.15",
