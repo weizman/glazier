@@ -3,7 +3,7 @@
 With `Glazier` you can register to the creation event of any newborn window in the webpage
 and manipulate that window as you like before anyone else in the page has the chance to do so.
 
-[Learn more about Glazier project, what it comes to solve and how]()
+[Learn more about Glazier project, what it comes to solve and how](https://weizman.github.io/glazier-website/)
 
 > ⚠️ Warning! This is experimental! ⚠️
 
@@ -45,7 +45,7 @@ in order for it to play its role securely.
 
 2. **It must be served as-is** - If it goes through any bundlers that might change it,
    `glazier` may contain flaws that attackers might use to cancel its effect (for further
-   explanation see [natives]() section below)
+   explanation see [natives](https://weizman.github.io/glazier-website#natives) section below)
 
 
 ## Contribute
