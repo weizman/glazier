@@ -1,6 +1,6 @@
 {
   "name": "glazier",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "register to the creation event of any newborn window in the webpage",
   "main": "src/index.js",
   "devDependencies": {
@@ -32,7 +32,7 @@
   "bugs": {
     "url": "https://github.com/weizman/glazier/issues"
   },
-  "homepage": "https://github.com/weizman/glazier#readme",
+  "homepage": "https://weizman.github.io/glazier-website/",
   "dependencies": {
     "is-cross-origin": "^1.0.1"
   }
