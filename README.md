@@ -5,7 +5,9 @@ and manipulate that window as you like before anyone else in the page has the ch
 
 [Learn more about Glazier project, what it comes to solve and how](https://weizman.github.io/glazier-website/)
 
-> ⚠️ Warning! This is experimental! ⚠️
+> ⚠️ Warning - Experimental ⚠️
+
+[Simple DEMO](https://weizman.github.io/glazier-website/) - You're challenged to pop an alert in this page 😉
 
 ## usage
 
@@ -71,7 +73,7 @@ to bypass its hooks.
 
 Bottom line - `glazier` might have security vulnerabilities!
 
-### help
+### Help
 
 Help with promoting any of the topics above is very much appreciated in order for this project
 to become production ready and reshape how hermetic window hooking should look like!
