@@ -26,11 +26,12 @@ window.GLAZE((win) => {
 
 ## install
 
-The latest `glazier` production version is included in the official repo, so in order to
+The latest `glazier` [production version](https://raw.githubusercontent.com/weizman/glazier/main/glazier.prod.js) is included in the official repo
+and also in [upkg cdn](https://unpkg.com/glazier/glazier.prod.js), so in order to
 install `glazier` in the website, simply place it wherever and serve it to the website as-is:
 
 ```html
-<script src="https://my-website.com/glazier.js"></script>
+<script src="https://unpkg.com/glazier/glazier.prod.js"></script>
 ```
 
 After this line, window should expose `window.GLAZE` API for the
