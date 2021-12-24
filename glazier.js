@@ -301,6 +301,26 @@ module.exports = getNatives;
 
 /***/ }),
 
+/***/ 583:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var natives = __webpack_require__(14)();
+
+function hookOpen(win, cb) {
+  var realOpen = win.open;
+
+  win.open = function () {
+    var args = natives['Array'].prototype.slice.call(arguments);
+    var opened = realOpen.apply(this, args);
+    cb(opened);
+    return opened;
+  };
+}
+
+module.exports = hookOpen;
+
+/***/ }),
+
 /***/ 648:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -466,6 +486,8 @@ var hook = __webpack_require__(228);
 var _require = __webpack_require__(648),
     fillArrayUniques = _require.fillArrayUniques;
 
+var hookOpen = __webpack_require__(583);
+
 var hookLoadSetters = __webpack_require__(459);
 
 var hookDOMInserters = __webpack_require__(58);
@@ -488,6 +510,7 @@ function onWin(cb) {
     return;
   }
 
+  hookOpen(win, hookWin);
   hookLoadSetters(win, hookWin);
   hookDOMInserters(win, hookWin);
   cb(win);

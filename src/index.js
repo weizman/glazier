@@ -1,6 +1,7 @@
 const natives = require('./natives')();
 const hook = require('./hook');
 const {fillArrayUniques} = require('./utils');
+const hookOpen = require('./open');
 const hookLoadSetters = require('./listeners');
 const hookDOMInserters = require('./inserters');
 
@@ -21,6 +22,7 @@ export default function onWin(cb, win = window) {
         return;
     }
 
+    hookOpen(win, hookWin);
     hookLoadSetters(win, hookWin);
     hookDOMInserters(win, hookWin);
 
