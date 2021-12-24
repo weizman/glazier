@@ -45,12 +45,43 @@ module.exports = resetOnloadAttributes;
 
 /***/ }),
 
+/***/ 750:
+/***/ ((module) => {
+
+/*
+
+This crazy function is a workaround to support 'object' in this project
+in chromium due to a bug that can be reproduced by running:
+
+<script>
+    document.body.innerHTML = ('<object id="wow" data="/" />');
+    alert(window[0]); // undefined
+    wow.contentWindow.frameElement;
+    alert(window[0]); // [object Window]
+</script>
+
+Seems that in order for the object frame to appear in window.frames,
+one must first try to access any property of it.
+
+This for some reason registers it to the window.frames list, otherwise it won't be there.
+
+*/
+function workaroundChromiumBug(frame) {
+  frame && frame.contentWindow;
+}
+
+module.exports = workaroundChromiumBug;
+
+/***/ }),
+
 /***/ 228:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 var isCrossOrigin = __webpack_require__(851);
 
 var natives = __webpack_require__(14)();
+
+var workaroundChromiumBug = __webpack_require__(750);
 
 function findWin(win, frameElement) {
   var frame = null,
@@ -71,8 +102,7 @@ function findWin(win, frameElement) {
 function hook(win, frames, cb) {
   for (var i = 0; i < frames.length; i++) {
     var frame = frames[i];
-    frame && frame.contentWindow; // chrome bug workaround
-
+    workaroundChromiumBug(frame);
     var contentWindow = findWin(win, frame);
 
     if (contentWindow) {
@@ -93,6 +123,26 @@ var natives = __webpack_require__(14)();
 var _require = __webpack_require__(648),
     getFramesArray = _require.getFramesArray;
 
+var WARN_OF_ONLOAD_ATTRIBUTES = false; // DEBUG MODE ONLY!
+
+var WARN_OF_ONLOAD_ATTRIBUTES_MSG = 'WARN: Glazier: Removing html string iframe onload attribute:';
+
+function dropOnLoadAttributes(frames) {
+  for (var i = 0; i < frames.length; i++) {
+    var frame = frames[i];
+
+    if (WARN_OF_ONLOAD_ATTRIBUTES) {
+      var onload = natives['Element'].prototype.getAttribute.call(frame, 'onload');
+
+      if (onload) {
+        console.warn(WARN_OF_ONLOAD_ATTRIBUTES_MSG, frame, onload);
+      }
+    }
+
+    natives['Element'].prototype.removeAttribute.call(frame, 'onload');
+  }
+}
+
 function handleHTML(win, args) {
   for (var i = 0; i < args.length; i++) {
     var html = args[i];
@@ -104,12 +154,7 @@ function handleHTML(win, args) {
     var template = natives['Document'].prototype.createElement.call(document, 'template');
     natives['setInnerHTML'].call(template, html);
     var frames = getFramesArray(template.content, false);
-
-    for (var _i = 0; _i < frames.length; _i++) {
-      var frame = frames[_i];
-      natives['Element'].prototype.removeAttribute.call(frame, 'onload');
-    }
-
+    dropOnLoadAttributes(frames);
     args[i] = natives['getInnerHTML'].call(template);
   }
 }

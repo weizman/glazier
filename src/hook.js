@@ -1,5 +1,6 @@
 const isCrossOrigin = require('is-cross-origin');
 const natives = require('./natives')();
+const workaroundChromiumBug = require('./chromium_bug_workaround');
 
 function findWin(win, frameElement) {
     let frame = null, i = -1;
@@ -17,7 +18,7 @@ function findWin(win, frameElement) {
 function hook(win, frames, cb) {
     for (let i = 0; i < frames.length; i++) {
         const frame = frames[i];
-        frame && frame.contentWindow; // chrome bug workaround
+        workaroundChromiumBug(frame);
         const contentWindow = findWin(win, frame);
         if (contentWindow) {
             cb(contentWindow);

@@ -1,6 +1,6 @@
 {
   "name": "glazier",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "register to the creation event of any newborn window in the webpage",
   "main": "src/index.js",
   "devDependencies": {
@@ -20,7 +20,8 @@
     "build-dev": "webpack --config ./webpack.config.js",
     "build-prod": "webpack --config ./webpack.prod.config.js",
     "build": "yarn build-prod & yarn build-dev",
-    "test": "yarn build && ./node_modules/.bin/wdio run wdio.conf.js"
+    "test": "./node_modules/.bin/wdio run wdio.conf.js",
+    "build-test": "yarn build && yarn test"
   },
   "repository": {
     "type": "git",

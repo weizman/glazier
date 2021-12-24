@@ -74,7 +74,42 @@ to bypass its hooks.
 
 Bottom line - `glazier` might have security vulnerabilities!
 
+### Tests
+
+In order to assure security, there are many tests that verify that `glazier`
+is fully hermetic as promised - everything that `glazier` supports is fully tested.
+
+The tests mainly try to bypass `glazier` in any possible way.
+
+If you found a vulnerability in `glazier`, open a PR with a test that demonstrates it.
+
 ### Help
 
 Help with promoting any of the topics above is very much appreciated in order for this project
 to become production ready and reshape how hermetic window hooking should look like!
+
+## Troubleshooting
+
+Here are some important things to know about Glazier, and some problems you might have with it:
+
+### html string iframes onload attributes
+
+`onload` attributes of iframes that were created via html string
+can be used to execute code that bypasses `glazier`:
+
+```javascript
+document.body.innerHTML = '<iframe onload=alert("BYPASS_GLAZIER")></iframe>'
+```
+
+At this point, it was decided that `glazier` drops those
+listeners as protection because:
+
+1. Hooking those listeners is not trivial and requires research.
+2. After some research of major websites, no javascript that uses
+this technique was found, not even once.
+
+This might cause issues in your website if you're using this technique. If it does, rebuild Glazier with `WARN_OF_ONLOAD_ATTRIBUTES=true`, and reload the website.
+
+If logs of found onload attributes appear, Glazier might
+interrupt your website flow. If so, open an issue at:
+[https://github.com/weizman/glazier/issues/new](https://github.com/weizman/glazier/issues/new?title=Glazier+disrupts+website+flow+when+removing+html+string+iframes+onload+attributes&body=Reproduce+by+running+glazier+on+%3CWEBSITE_URL%3E)
