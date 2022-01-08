@@ -1,4 +1,5 @@
 const resetOnloadAttributes = require('./attributes');
+const {securely} = require('./securely');
 const {getFramesArray, getArguments} = require('./utils');
 const handleHTML = require('./html');
 const hook = require('./hook');
@@ -9,7 +10,7 @@ const map = {
     Element: ['innerHTML', 'outerHTML', 'insertAdjacentHTML', 'replaceWith', 'insertAdjacentElement', 'append', 'before', 'prepend', 'after', 'replaceChildren'],
 };
 
-function getHook(win, securely, native, cb) {
+function getHook(win, native, cb) {
     return function() {
         const args = getArguments(arguments)
         const element = securely(() => this.parentElementS || this);
@@ -23,7 +24,7 @@ function getHook(win, securely, native, cb) {
     };
 }
 
-function hookDOMInserters(win, securely, cb) {
+function hookDOMInserters(win, cb) {
     for (const proto in map) {
         const funcs = map[proto];
         for (let i = 0; i < funcs.length; i++) {
@@ -31,7 +32,7 @@ function hookDOMInserters(win, securely, cb) {
             securely(() => {
                 const desc = ObjectS.getOwnPropertyDescriptor(win[proto + 'S'].prototype, func);
                 const prop = desc.set ? 'set' : 'value';
-                desc[prop] = getHook(win, securely, desc[prop], cb);
+                desc[prop] = getHook(win, desc[prop], cb);
                 ObjectS.defineProperty(win[proto].prototype, func, desc);
             });
         }

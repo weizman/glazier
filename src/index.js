@@ -1,38 +1,10 @@
-const secure = require('../../natives-manager/src/index');
+const {securely, secureNewWin} = require('./securely');
 const hook = require('./hook');
 const hookOpen = require('./open');
 const hookLoadSetters = require('./listeners');
 const hookDOMInserters = require('./inserters');
 
-const config = {
-    objects: {
-        'window': ['fetch'],
-        'Object': ['defineProperty', 'getOwnPropertyDescriptor']
-    },
-    prototypes: {
-        'Map': ['get', 'set'],
-        'Node': ['nodeType', 'parentElement'],
-        'Document': [],
-        'DocumentFragment': [],
-        'Object': ['toString'],
-        'Array': ['includes', 'push', 'slice'],
-        'Element': ['innerHTML'],
-        'HTMLElement': ['onload'],
-        'EventTarget': ['addEventListener'],
-    }
-};
-
-const securely = secure(top, config);
-const wins = [top];
-
 export default function onWin(cb, win = window) {
-    securely(() => {
-        if (!wins.includesS(win)) {
-            wins.pushS(win);
-            secure(win, config);
-        }
-    });
-
     function hookWin(contentWindow) {
         onWin(cb, contentWindow);
         securely(() => {
@@ -44,9 +16,11 @@ export default function onWin(cb, win = window) {
         });
     }
 
+    secureNewWin(win);
+
     hookOpen(win, hookWin);
-    hookLoadSetters(win, securely, hookWin);
-    hookDOMInserters(win, securely, hookWin);
+    hookLoadSetters(win, hookWin);
+    hookDOMInserters(win, hookWin);
 
     cb(win);
 }

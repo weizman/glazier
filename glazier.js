@@ -168,9 +168,12 @@ module.exports = handleHTML;
 
 var resetOnloadAttributes = __webpack_require__(654);
 
-var _require = __webpack_require__(648),
-    getFramesArray = _require.getFramesArray,
-    getArguments = _require.getArguments;
+var _require = __webpack_require__(733),
+    securely = _require.securely;
+
+var _require2 = __webpack_require__(648),
+    getFramesArray = _require2.getFramesArray,
+    getArguments = _require2.getArguments;
 
 var handleHTML = __webpack_require__(328);
 
@@ -182,7 +185,7 @@ var map = {
   Element: ['innerHTML', 'outerHTML', 'insertAdjacentHTML', 'replaceWith', 'insertAdjacentElement', 'append', 'before', 'prepend', 'after', 'replaceChildren']
 };
 
-function getHook(win, securely, native, cb) {
+function getHook(win, native, cb) {
   return function () {
     var _this = this;
 
@@ -200,7 +203,7 @@ function getHook(win, securely, native, cb) {
   };
 }
 
-function hookDOMInserters(win, securely, cb) {
+function hookDOMInserters(win, cb) {
   var _loop = function _loop(proto) {
     var funcs = map[proto];
 
@@ -209,7 +212,7 @@ function hookDOMInserters(win, securely, cb) {
       securely(function () {
         var desc = ObjectS.getOwnPropertyDescriptor(win[proto + 'S'].prototype, func);
         var prop = desc.set ? 'set' : 'value';
-        desc[prop] = getHook(win, securely, desc[prop], cb);
+        desc[prop] = getHook(win, desc[prop], cb);
         ObjectS.defineProperty(win[proto].prototype, func, desc);
       });
     };
@@ -233,8 +236,11 @@ module.exports = hookDOMInserters;
 
 var hook = __webpack_require__(228);
 
-var _require = __webpack_require__(648),
-    getArguments = _require.getArguments;
+var _require = __webpack_require__(733),
+    securely = _require.securely;
+
+var _require2 = __webpack_require__(648),
+    getArguments = _require2.getArguments;
 
 function callOnload(that, onload, args) {
   if (onload) {
@@ -246,7 +252,7 @@ function callOnload(that, onload, args) {
   }
 }
 
-function getHook(win, securely, addEventListener, cb) {
+function getHook(win, addEventListener, cb) {
   return function () {
     var _this = this;
 
@@ -266,10 +272,10 @@ function getHook(win, securely, addEventListener, cb) {
   };
 }
 
-function hookLoadSetters(win, securely, cb) {
+function hookLoadSetters(win, cb) {
   securely(function () {
     return ObjectS.defineProperty(win.EventTarget.prototype, 'addEventListener', {
-      value: getHook(win, securely, addEventListener, cb)
+      value: getHook(win, addEventListener, cb)
     });
   });
 }
@@ -344,6 +350,47 @@ function hookOpen(win, cb) {
 }
 
 module.exports = hookOpen;
+
+/***/ }),
+
+/***/ 733:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var secure = __webpack_require__(983);
+
+var config = {
+  objects: {
+    'window': ['fetch'],
+    'Object': ['defineProperty', 'getOwnPropertyDescriptor']
+  },
+  prototypes: {
+    'Map': ['get', 'set'],
+    'Node': ['nodeType', 'parentElement'],
+    'Document': [],
+    'DocumentFragment': [],
+    'Object': ['toString'],
+    'Array': ['includes', 'push', 'slice'],
+    'Element': ['innerHTML'],
+    'HTMLElement': ['onload'],
+    'EventTarget': ['addEventListener']
+  }
+};
+var securely = secure(top, config);
+var wins = [top];
+
+function secureNewWin(win) {
+  securely(function () {
+    if (!wins.includesS(win)) {
+      wins.pushS(win);
+      secure(win, config);
+    }
+  });
+}
+
+module.exports = {
+  securely: securely,
+  secureNewWin: secureNewWin
+};
 
 /***/ }),
 
@@ -654,7 +701,9 @@ var __webpack_exports__ = {};
 "use strict";
 
 ;// CONCATENATED MODULE: ./src/index.js
-var src_secure = __webpack_require__(983);
+var _require = __webpack_require__(733),
+    securely = _require.securely,
+    secureNewWin = _require.secureNewWin;
 
 var hook = __webpack_require__(228);
 
@@ -664,33 +713,8 @@ var hookLoadSetters = __webpack_require__(459);
 
 var hookDOMInserters = __webpack_require__(58);
 
-var config = {
-  objects: {
-    'window': ['fetch'],
-    'Object': ['defineProperty', 'getOwnPropertyDescriptor']
-  },
-  prototypes: {
-    'Map': ['get', 'set'],
-    'Node': ['nodeType', 'parentElement'],
-    'Document': [],
-    'DocumentFragment': [],
-    'Object': ['toString'],
-    'Array': ['includes', 'push', 'slice'],
-    'Element': ['innerHTML'],
-    'HTMLElement': ['onload'],
-    'EventTarget': ['addEventListener']
-  }
-};
-var securely = src_secure(top, config);
-var wins = [top];
 function onWin(cb) {
   var win = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : window;
-  securely(function () {
-    if (!wins.includesS(win)) {
-      wins.pushS(win);
-      src_secure(win, config);
-    }
-  });
 
   function hookWin(contentWindow) {
     onWin(cb, contentWindow);
@@ -703,9 +727,10 @@ function onWin(cb) {
     });
   }
 
+  secureNewWin(win);
   hookOpen(win, hookWin);
-  hookLoadSetters(win, securely, hookWin);
-  hookDOMInserters(win, securely, hookWin);
+  hookLoadSetters(win, hookWin);
+  hookDOMInserters(win, hookWin);
   cb(win);
 }
 ;// CONCATENATED MODULE: ./build.js

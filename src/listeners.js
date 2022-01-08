@@ -1,4 +1,5 @@
 const hook = require('./hook');
+const {securely} = require('./securely');
 const {getArguments} = require('./utils');
 
 function callOnload(that, onload, args) {
@@ -12,7 +13,7 @@ function callOnload(that, onload, args) {
     }
 }
 
-function getHook(win, securely, addEventListener, cb) {
+function getHook(win, addEventListener, cb) {
     return function() {
         const args = getArguments(arguments);
         const index = typeof args[0] === 'function' ? 0 : 1;
@@ -26,8 +27,8 @@ function getHook(win, securely, addEventListener, cb) {
     }
 }
 
-function hookLoadSetters(win, securely, cb) {
-    securely(() => ObjectS.defineProperty(win.EventTarget.prototype, 'addEventListener', {value: getHook(win, securely, addEventListener, cb)}));
+function hookLoadSetters(win, cb) {
+    securely(() => ObjectS.defineProperty(win.EventTarget.prototype, 'addEventListener', {value: getHook(win, addEventListener, cb)}));
 }
 
 module.exports = hookLoadSetters;
