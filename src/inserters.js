@@ -1,6 +1,5 @@
-const natives = require('./natives')();
 const resetOnloadAttributes = require('./attributes');
-const {getFramesArray} = require('./utils');
+const {getFramesArray, getArguments} = require('./utils');
 const handleHTML = require('./html');
 const hook = require('./hook');
 
@@ -10,13 +9,13 @@ const map = {
     Element: ['innerHTML', 'outerHTML', 'insertAdjacentHTML', 'replaceWith', 'insertAdjacentElement', 'append', 'before', 'prepend', 'after', 'replaceChildren'],
 };
 
-function getHook(win, native, cb) {
+function getHook(win, native, real, cb) {
     return function() {
-        const args = natives['Array'].prototype.slice.call(arguments);
-        const element = natives['getParentElement'].call(this) || this;
+        const args = getArguments(arguments)
+        const element = native(() => this.parentElementN || this);
         resetOnloadAttributes(win, args, cb);
         handleHTML(win, args);
-        const ret = native.apply(this, args);
+        const ret = real.apply(this, args);
         const frames = getFramesArray(element, false);
         hook(win, frames, cb);
         hook(win, args, cb);
@@ -24,16 +23,17 @@ function getHook(win, native, cb) {
     };
 }
 
-function hookDOMInserters(win, cb) {
+function hookDOMInserters(win, native, cb) {
     for (const proto in map) {
         const funcs = map[proto];
         for (let i = 0; i < funcs.length; i++) {
             const func = funcs[i];
-            const desc = natives['Object'].getOwnPropertyDescriptor(natives[proto].prototype, func);
-            const prop = desc.set ? 'set' : 'value';
-            const native = desc[prop];
-            desc[prop] = getHook(win, native, cb);
-            natives['Object'].defineProperty(win[proto].prototype, func, desc);
+            native(() => {
+                const desc = ObjectN.getOwnPropertyDescriptor(win[proto + 'N'].prototype, func);
+                const prop = desc.set ? 'set' : 'value';
+                desc[prop] = getHook(win, native, desc[prop], cb);
+                ObjectN.defineProperty(win[proto].prototype, func, desc);
+            });
         }
     }
 }

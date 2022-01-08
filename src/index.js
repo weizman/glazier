@@ -1,23 +1,52 @@
-const natives = require('./natives')();
+const wrap = require('../../natives-manager/src/index');
 const hook = require('./hook');
 const hookOpen = require('./open');
 const hookLoadSetters = require('./listeners');
 const hookDOMInserters = require('./inserters');
 
+const config = {
+    objects: {
+        'window': ['fetch'],
+        'Object': ['defineProperty', 'getOwnPropertyDescriptor']
+    },
+    prototypes: {
+        'Map': ['get', 'set'],
+        'Node': ['nodeType', 'parentElement'],
+        'Document': [],
+        'DocumentFragment': [],
+        'Object': ['toString'],
+        'Array': ['includes', 'push', 'slice'],
+        'Element': ['innerHTML'],
+        'HTMLElement': ['onload'],
+        'EventTarget': ['addEventListener'],
+    }
+};
+
+const native = wrap(top, config);
+const wins = [top];
+
 export default function onWin(cb, win = window) {
+    native(() => {
+        if (!wins.includesN(win)) {
+            wins.pushN(win);
+            wrap(win, config);
+        }
+    });
+
     function hookWin(contentWindow) {
         onWin(cb, contentWindow);
-        const frame = contentWindow.frameElement;
-        natives['addEventListener'].call(frame, 'load', function() {
-            hook(win, [this], function() {
-                onWin(cb, contentWindow);
+        native(() => {
+            contentWindow.frameElement.addEventListenerN('load', function() {
+                hook(win, [this], function() {
+                    onWin(cb, contentWindow);
+                });
             });
         });
     }
 
     hookOpen(win, hookWin);
-    hookLoadSetters(win, hookWin);
-    hookDOMInserters(win, hookWin);
+    hookLoadSetters(win, native, hookWin);
+    hookDOMInserters(win, native, hookWin);
 
     cb(win);
 }

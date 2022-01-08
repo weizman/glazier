@@ -1,5 +1,13 @@
 const natives = require('./natives')();
 
+function getArguments(oldArgs) {
+    const args = [];
+    for (let i = 0; i < oldArgs.length; i++) {
+        args[i] = oldArgs[i];
+    }
+    return args;
+}
+
 function getNodeType(node) {
     return natives['getNodeType'].call(node);
 }
@@ -76,4 +84,4 @@ function fillArrayUniques(arr, items) {
     return isArrUpdated;
 }
 
-module.exports = {getFramesArray, isFrameElement};
+module.exports = {getArguments, getFramesArray, isFrameElement};

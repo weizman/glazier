@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 586:
+/***/ 654:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 var natives = __webpack_require__(14)();
@@ -166,12 +166,11 @@ module.exports = handleHTML;
 /***/ 58:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var natives = __webpack_require__(14)();
-
-var resetOnloadAttributes = __webpack_require__(586);
+var resetOnloadAttributes = __webpack_require__(654);
 
 var _require = __webpack_require__(648),
-    getFramesArray = _require.getFramesArray;
+    getFramesArray = _require.getFramesArray,
+    getArguments = _require.getArguments;
 
 var handleHTML = __webpack_require__(328);
 
@@ -183,13 +182,17 @@ var map = {
   Element: ['innerHTML', 'outerHTML', 'insertAdjacentHTML', 'replaceWith', 'insertAdjacentElement', 'append', 'before', 'prepend', 'after', 'replaceChildren']
 };
 
-function getHook(win, native, cb) {
+function getHook(win, native, real, cb) {
   return function () {
-    var args = natives['Array'].prototype.slice.call(arguments);
-    var element = natives['getParentElement'].call(this) || this;
+    var _this = this;
+
+    var args = getArguments(arguments);
+    var element = native(function () {
+      return _this.parentElementN || _this;
+    });
     resetOnloadAttributes(win, args, cb);
     handleHTML(win, args);
-    var ret = native.apply(this, args);
+    var ret = real.apply(this, args);
     var frames = getFramesArray(element, false);
     hook(win, frames, cb);
     hook(win, args, cb);
@@ -197,18 +200,27 @@ function getHook(win, native, cb) {
   };
 }
 
-function hookDOMInserters(win, cb) {
-  for (var proto in map) {
+function hookDOMInserters(win, native, cb) {
+  var _loop = function _loop(proto) {
     var funcs = map[proto];
 
-    for (var i = 0; i < funcs.length; i++) {
+    var _loop2 = function _loop2(i) {
       var func = funcs[i];
-      var desc = natives['Object'].getOwnPropertyDescriptor(natives[proto].prototype, func);
-      var prop = desc.set ? 'set' : 'value';
-      var native = desc[prop];
-      desc[prop] = getHook(win, native, cb);
-      natives['Object'].defineProperty(win[proto].prototype, func, desc);
+      native(function () {
+        var desc = ObjectN.getOwnPropertyDescriptor(win[proto + 'N'].prototype, func);
+        var prop = desc.set ? 'set' : 'value';
+        desc[prop] = getHook(win, native, desc[prop], cb);
+        ObjectN.defineProperty(win[proto].prototype, func, desc);
+      });
+    };
+
+    for (var i = 0; i < funcs.length; i++) {
+      _loop2(i);
     }
+  };
+
+  for (var proto in map) {
+    _loop(proto);
   }
 }
 
@@ -219,9 +231,10 @@ module.exports = hookDOMInserters;
 /***/ 459:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var natives = __webpack_require__(14)();
-
 var hook = __webpack_require__(228);
+
+var _require = __webpack_require__(648),
+    getArguments = _require.getArguments;
 
 function callOnload(that, onload, args) {
   if (onload) {
@@ -233,26 +246,31 @@ function callOnload(that, onload, args) {
   }
 }
 
-function getHook(win, native, cb) {
+function getHook(win, native, addEventListener, cb) {
   return function () {
-    var args = natives['Array'].prototype.slice.call(arguments);
+    var _this = this;
+
+    var args = getArguments(arguments);
     var index = typeof args[0] === 'function' ? 0 : 1;
     var onload = args[index];
 
     args[index] = function listener() {
       hook(win, [this], cb);
-      var args = natives['Array'].prototype.slice.call(arguments);
+      var args = getArguments(arguments);
       callOnload(this, onload, args);
     };
 
-    return native.apply(this, args);
+    return native(function () {
+      return _this.addEventListenerN(args[0], args[1], args[2], args[3]);
+    });
   };
 }
 
-function hookLoadSetters(win, cb) {
-  var addEventListener = natives['Object'].getOwnPropertyDescriptor(natives['EventTarget'].prototype, 'addEventListener').value;
-  natives['Object'].defineProperty(win.EventTarget.prototype, 'addEventListener', {
-    value: getHook(win, addEventListener, cb)
+function hookLoadSetters(win, native, cb) {
+  native(function () {
+    return ObjectN.defineProperty(win.EventTarget.prototype, 'addEventListener', {
+      value: getHook(win, native, addEventListener, cb)
+    });
   });
 }
 
@@ -304,7 +322,8 @@ module.exports = getNatives;
 /***/ 583:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var natives = __webpack_require__(14)(); // https://github.com/weizman/glazier/issues/2
+var _require = __webpack_require__(648),
+    getArguments = _require.getArguments; // https://github.com/weizman/glazier/issues/2
 
 
 var ISSUE_2_SOLVED = false;
@@ -317,7 +336,7 @@ function hookOpen(win, cb) {
       return null;
     }
 
-    var args = natives['Array'].prototype.slice.call(arguments);
+    var args = getArguments(arguments);
     var opened = realOpen.apply(this, args);
     cb(opened);
     return opened;
@@ -334,6 +353,16 @@ module.exports = hookOpen;
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 
 var natives = __webpack_require__(14)();
+
+function getArguments(oldArgs) {
+  var args = [];
+
+  for (var i = 0; i < oldArgs.length; i++) {
+    args[i] = oldArgs[i];
+  }
+
+  return args;
+}
 
 function getNodeType(node) {
   return natives['getNodeType'].call(node);
@@ -405,8 +434,161 @@ function fillArrayUniques(arr, items) {
 }
 
 module.exports = {
+  getArguments: getArguments,
   getFramesArray: getFramesArray,
   isFrameElement: isFrameElement
+};
+
+/***/ }),
+
+/***/ 983:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var native = __webpack_require__(787);
+
+var objects = __webpack_require__(586);
+
+var prototypes = __webpack_require__(587);
+
+var allowNativesAccess = false;
+
+function shouldAllowNativesAccess() {
+  return allowNativesAccess;
+}
+
+function wrap(win) {
+  var config = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+    objects: {},
+    prototypes: {}
+  };
+  native(win, function (nativeWin) {
+    objects(win, nativeWin, shouldAllowNativesAccess, config.objects);
+    prototypes(win, nativeWin, shouldAllowNativesAccess, config.prototypes);
+  });
+  return function (cb) {
+    var allowNativesAccessOriginalState = allowNativesAccess;
+    allowNativesAccess = true;
+    var args = [];
+
+    for (var i = 1; i < arguments.length; i++) {
+      args[i - 1] = arguments[i];
+    }
+
+    var ret;
+
+    try {
+      ret = cb(args[0], args[1], args[2], args[3], args[4]);
+    } catch (err) {}
+
+    if (!allowNativesAccessOriginalState) {
+      allowNativesAccess = false;
+    }
+
+    return ret;
+  };
+}
+
+module.exports = wrap;
+
+/***/ }),
+
+/***/ 787:
+/***/ ((module) => {
+
+module.exports = function native(win, cb) {
+  var ifr = win.document.createElement('iframe');
+  win.document.head.appendChild(ifr);
+  cb(ifr.contentWindow);
+  ifr.parentElement.removeChild(ifr);
+};
+
+/***/ }),
+
+/***/ 586:
+/***/ ((module) => {
+
+module.exports = function apis(win, nativeWin, shouldAllowNativesAccess, objects) {
+  for (var object in objects) {
+    var _apis = objects[object];
+
+    var _loop = function _loop(i) {
+      var api = _apis[i];
+      var native = nativeWin[object][api];
+
+      if (typeof native === 'function') {
+        native = native.bind(nativeWin[object]);
+      }
+
+      nativeWin['Object'].defineProperty(nativeWin[object], api + 'N', {
+        configurable: false,
+        get: function get() {
+          if (!shouldAllowNativesAccess()) {
+            return;
+          }
+
+          return native;
+        }
+      });
+    };
+
+    for (var i = 0; i < _apis.length; i++) {
+      _loop(i);
+    }
+  }
+};
+
+/***/ }),
+
+/***/ 587:
+/***/ ((module) => {
+
+module.exports = function prototypes(win, nativeWin, shouldAllowNativesAccess, prototypes) {
+  var _loop = function _loop(prototype) {
+    var native = nativeWin[prototype];
+    nativeWin['Object'].defineProperty(win, prototype + 'N', {
+      configurable: false,
+      get: function get() {
+        if (!shouldAllowNativesAccess()) {
+          return;
+        }
+
+        return native;
+      }
+    });
+    var properties = prototypes[prototype];
+
+    var _loop2 = function _loop2(i) {
+      var property = properties[i];
+      var desc = nativeWin['Object'].getOwnPropertyDescriptor(nativeWin[prototype].prototype, property);
+      var value = desc.value;
+      desc.configurable = false;
+
+      var get = desc.get || function () {
+        return value;
+      };
+
+      delete desc.value;
+      delete desc.writable;
+
+      desc.get = function () {
+        if (!shouldAllowNativesAccess()) {
+          return;
+        }
+
+        return get.apply(this, arguments);
+      };
+
+      nativeWin['Object'].defineProperty(win[prototype].prototype, property + 'N', desc);
+    };
+
+    for (var i = 0; i < properties.length; i++) {
+      _loop2(i);
+    }
+  };
+
+  for (var prototype in prototypes) {
+    _loop(prototype);
+  }
 };
 
 /***/ }),
@@ -485,7 +667,7 @@ var __webpack_exports__ = {};
 "use strict";
 
 ;// CONCATENATED MODULE: ./src/index.js
-var natives = __webpack_require__(14)();
+var wrap = __webpack_require__(983);
 
 var hook = __webpack_require__(228);
 
@@ -495,22 +677,48 @@ var hookLoadSetters = __webpack_require__(459);
 
 var hookDOMInserters = __webpack_require__(58);
 
+var config = {
+  objects: {
+    'window': ['fetch'],
+    'Object': ['defineProperty', 'getOwnPropertyDescriptor']
+  },
+  prototypes: {
+    'Map': ['get', 'set'],
+    'Node': ['nodeType', 'parentElement'],
+    'Document': [],
+    'DocumentFragment': [],
+    'Object': ['toString'],
+    'Array': ['includes', 'push', 'slice'],
+    'Element': ['innerHTML'],
+    'HTMLElement': ['onload'],
+    'EventTarget': ['addEventListener']
+  }
+};
+var src_native = wrap(top, config);
+var wins = [top];
 function onWin(cb) {
   var win = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : window;
+  src_native(function () {
+    if (!wins.includesN(win)) {
+      wins.pushN(win);
+      wrap(win, config);
+    }
+  });
 
   function hookWin(contentWindow) {
     onWin(cb, contentWindow);
-    var frame = contentWindow.frameElement;
-    natives['addEventListener'].call(frame, 'load', function () {
-      hook(win, [this], function () {
-        onWin(cb, contentWindow);
+    src_native(function () {
+      contentWindow.frameElement.addEventListenerN('load', function () {
+        hook(win, [this], function () {
+          onWin(cb, contentWindow);
+        });
       });
     });
   }
 
   hookOpen(win, hookWin);
-  hookLoadSetters(win, hookWin);
-  hookDOMInserters(win, hookWin);
+  hookLoadSetters(win, src_native, hookWin);
+  hookDOMInserters(win, src_native, hookWin);
   cb(win);
 }
 ;// CONCATENATED MODULE: ./build.js
