@@ -182,17 +182,17 @@ var map = {
   Element: ['innerHTML', 'outerHTML', 'insertAdjacentHTML', 'replaceWith', 'insertAdjacentElement', 'append', 'before', 'prepend', 'after', 'replaceChildren']
 };
 
-function getHook(win, native, real, cb) {
+function getHook(win, securely, native, cb) {
   return function () {
     var _this = this;
 
     var args = getArguments(arguments);
-    var element = native(function () {
-      return _this.parentElementN || _this;
+    var element = securely(function () {
+      return _this.parentElementS || _this;
     });
     resetOnloadAttributes(win, args, cb);
     handleHTML(win, args);
-    var ret = real.apply(this, args);
+    var ret = native.apply(this, args);
     var frames = getFramesArray(element, false);
     hook(win, frames, cb);
     hook(win, args, cb);
@@ -200,17 +200,17 @@ function getHook(win, native, real, cb) {
   };
 }
 
-function hookDOMInserters(win, native, cb) {
+function hookDOMInserters(win, securely, cb) {
   var _loop = function _loop(proto) {
     var funcs = map[proto];
 
     var _loop2 = function _loop2(i) {
       var func = funcs[i];
-      native(function () {
-        var desc = ObjectN.getOwnPropertyDescriptor(win[proto + 'N'].prototype, func);
+      securely(function () {
+        var desc = ObjectS.getOwnPropertyDescriptor(win[proto + 'S'].prototype, func);
         var prop = desc.set ? 'set' : 'value';
-        desc[prop] = getHook(win, native, desc[prop], cb);
-        ObjectN.defineProperty(win[proto].prototype, func, desc);
+        desc[prop] = getHook(win, securely, desc[prop], cb);
+        ObjectS.defineProperty(win[proto].prototype, func, desc);
       });
     };
 
@@ -246,7 +246,7 @@ function callOnload(that, onload, args) {
   }
 }
 
-function getHook(win, native, addEventListener, cb) {
+function getHook(win, securely, addEventListener, cb) {
   return function () {
     var _this = this;
 
@@ -260,16 +260,16 @@ function getHook(win, native, addEventListener, cb) {
       callOnload(this, onload, args);
     };
 
-    return native(function () {
-      return _this.addEventListenerN(args[0], args[1], args[2], args[3]);
+    return securely(function () {
+      return _this.addEventListenerS(args[0], args[1], args[2], args[3]);
     });
   };
 }
 
-function hookLoadSetters(win, native, cb) {
-  native(function () {
-    return ObjectN.defineProperty(win.EventTarget.prototype, 'addEventListener', {
-      value: getHook(win, native, addEventListener, cb)
+function hookLoadSetters(win, securely, cb) {
+  securely(function () {
+    return ObjectS.defineProperty(win.EventTarget.prototype, 'addEventListener', {
+      value: getHook(win, securely, addEventListener, cb)
     });
   });
 }
@@ -444,8 +444,6 @@ module.exports = {
 /***/ 983:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var native = __webpack_require__(787);
-
 var objects = __webpack_require__(586);
 
 var prototypes = __webpack_require__(587);
@@ -456,7 +454,14 @@ function shouldAllowNativesAccess() {
   return allowNativesAccess;
 }
 
-function wrap(win) {
+function native(win, cb) {
+  var ifr = win.document.createElement('iframe');
+  win.document.head.appendChild(ifr);
+  cb(ifr.contentWindow);
+  ifr.parentElement.removeChild(ifr);
+}
+
+function secure(win) {
   var config = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
     objects: {},
     prototypes: {}
@@ -465,22 +470,16 @@ function wrap(win) {
     objects(win, nativeWin, shouldAllowNativesAccess, config.objects);
     prototypes(win, nativeWin, shouldAllowNativesAccess, config.prototypes);
   });
-  return function (cb) {
-    var allowNativesAccessOriginalState = allowNativesAccess;
+  return function securely(cb, a, b, c, d, e, f, g, h, i, j) {
+    var state = allowNativesAccess;
     allowNativesAccess = true;
-    var args = [];
-
-    for (var i = 1; i < arguments.length; i++) {
-      args[i - 1] = arguments[i];
-    }
-
     var ret;
 
     try {
-      ret = cb(args[0], args[1], args[2], args[3], args[4]);
+      ret = cb(a, b, c, d, e, f, g, h, i, j);
     } catch (err) {}
 
-    if (!allowNativesAccessOriginalState) {
+    if (!state) {
       allowNativesAccess = false;
     }
 
@@ -488,19 +487,7 @@ function wrap(win) {
   };
 }
 
-module.exports = wrap;
-
-/***/ }),
-
-/***/ 787:
-/***/ ((module) => {
-
-module.exports = function native(win, cb) {
-  var ifr = win.document.createElement('iframe');
-  win.document.head.appendChild(ifr);
-  cb(ifr.contentWindow);
-  ifr.parentElement.removeChild(ifr);
-};
+module.exports = secure;
 
 /***/ }),
 
@@ -519,7 +506,7 @@ module.exports = function apis(win, nativeWin, shouldAllowNativesAccess, objects
         native = native.bind(nativeWin[object]);
       }
 
-      nativeWin['Object'].defineProperty(nativeWin[object], api + 'N', {
+      nativeWin['Object'].defineProperty(nativeWin[object], api + 'S', {
         configurable: false,
         get: function get() {
           if (!shouldAllowNativesAccess()) {
@@ -545,7 +532,7 @@ module.exports = function apis(win, nativeWin, shouldAllowNativesAccess, objects
 module.exports = function prototypes(win, nativeWin, shouldAllowNativesAccess, prototypes) {
   var _loop = function _loop(prototype) {
     var native = nativeWin[prototype];
-    nativeWin['Object'].defineProperty(win, prototype + 'N', {
+    nativeWin['Object'].defineProperty(win, prototype + 'S', {
       configurable: false,
       get: function get() {
         if (!shouldAllowNativesAccess()) {
@@ -578,7 +565,7 @@ module.exports = function prototypes(win, nativeWin, shouldAllowNativesAccess, p
         return get.apply(this, arguments);
       };
 
-      nativeWin['Object'].defineProperty(win[prototype].prototype, property + 'N', desc);
+      nativeWin['Object'].defineProperty(win[prototype].prototype, property + 'S', desc);
     };
 
     for (var i = 0; i < properties.length; i++) {
@@ -667,7 +654,7 @@ var __webpack_exports__ = {};
 "use strict";
 
 ;// CONCATENATED MODULE: ./src/index.js
-var wrap = __webpack_require__(983);
+var src_secure = __webpack_require__(983);
 
 var hook = __webpack_require__(228);
 
@@ -694,21 +681,21 @@ var config = {
     'EventTarget': ['addEventListener']
   }
 };
-var src_native = wrap(top, config);
+var securely = src_secure(top, config);
 var wins = [top];
 function onWin(cb) {
   var win = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : window;
-  src_native(function () {
-    if (!wins.includesN(win)) {
-      wins.pushN(win);
-      wrap(win, config);
+  securely(function () {
+    if (!wins.includesS(win)) {
+      wins.pushS(win);
+      src_secure(win, config);
     }
   });
 
   function hookWin(contentWindow) {
     onWin(cb, contentWindow);
-    src_native(function () {
-      contentWindow.frameElement.addEventListenerN('load', function () {
+    securely(function () {
+      contentWindow.frameElement.addEventListenerS('load', function () {
         hook(win, [this], function () {
           onWin(cb, contentWindow);
         });
@@ -717,8 +704,8 @@ function onWin(cb) {
   }
 
   hookOpen(win, hookWin);
-  hookLoadSetters(win, src_native, hookWin);
-  hookDOMInserters(win, src_native, hookWin);
+  hookLoadSetters(win, securely, hookWin);
+  hookDOMInserters(win, securely, hookWin);
   cb(win);
 }
 ;// CONCATENATED MODULE: ./build.js

@@ -12,7 +12,7 @@ function callOnload(that, onload, args) {
     }
 }
 
-function getHook(win, native, addEventListener, cb) {
+function getHook(win, securely, addEventListener, cb) {
     return function() {
         const args = getArguments(arguments);
         const index = typeof args[0] === 'function' ? 0 : 1;
@@ -22,12 +22,12 @@ function getHook(win, native, addEventListener, cb) {
             const args = getArguments(arguments);
             callOnload(this, onload, args);
         };
-        return native(() => this.addEventListenerN(args[0], args[1], args[2], args[3]));
+        return securely(() => this.addEventListenerS(args[0], args[1], args[2], args[3]));
     }
 }
 
-function hookLoadSetters(win, native, cb) {
-    native(() => ObjectN.defineProperty(win.EventTarget.prototype, 'addEventListener', {value: getHook(win, native, addEventListener, cb)}));
+function hookLoadSetters(win, securely, cb) {
+    securely(() => ObjectS.defineProperty(win.EventTarget.prototype, 'addEventListener', {value: getHook(win, securely, addEventListener, cb)}));
 }
 
 module.exports = hookLoadSetters;

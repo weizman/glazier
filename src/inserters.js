@@ -9,13 +9,13 @@ const map = {
     Element: ['innerHTML', 'outerHTML', 'insertAdjacentHTML', 'replaceWith', 'insertAdjacentElement', 'append', 'before', 'prepend', 'after', 'replaceChildren'],
 };
 
-function getHook(win, native, real, cb) {
+function getHook(win, securely, native, cb) {
     return function() {
         const args = getArguments(arguments)
-        const element = native(() => this.parentElementN || this);
+        const element = securely(() => this.parentElementS || this);
         resetOnloadAttributes(win, args, cb);
         handleHTML(win, args);
-        const ret = real.apply(this, args);
+        const ret = native.apply(this, args);
         const frames = getFramesArray(element, false);
         hook(win, frames, cb);
         hook(win, args, cb);
@@ -23,16 +23,16 @@ function getHook(win, native, real, cb) {
     };
 }
 
-function hookDOMInserters(win, native, cb) {
+function hookDOMInserters(win, securely, cb) {
     for (const proto in map) {
         const funcs = map[proto];
         for (let i = 0; i < funcs.length; i++) {
             const func = funcs[i];
-            native(() => {
-                const desc = ObjectN.getOwnPropertyDescriptor(win[proto + 'N'].prototype, func);
+            securely(() => {
+                const desc = ObjectS.getOwnPropertyDescriptor(win[proto + 'S'].prototype, func);
                 const prop = desc.set ? 'set' : 'value';
-                desc[prop] = getHook(win, native, desc[prop], cb);
-                ObjectN.defineProperty(win[proto].prototype, func, desc);
+                desc[prop] = getHook(win, securely, desc[prop], cb);
+                ObjectS.defineProperty(win[proto].prototype, func, desc);
             });
         }
     }

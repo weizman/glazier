@@ -1,4 +1,4 @@
-const wrap = require('../../natives-manager/src/index');
+const secure = require('../../natives-manager/src/index');
 const hook = require('./hook');
 const hookOpen = require('./open');
 const hookLoadSetters = require('./listeners');
@@ -22,21 +22,21 @@ const config = {
     }
 };
 
-const native = wrap(top, config);
+const securely = secure(top, config);
 const wins = [top];
 
 export default function onWin(cb, win = window) {
-    native(() => {
-        if (!wins.includesN(win)) {
-            wins.pushN(win);
-            wrap(win, config);
+    securely(() => {
+        if (!wins.includesS(win)) {
+            wins.pushS(win);
+            secure(win, config);
         }
     });
 
     function hookWin(contentWindow) {
         onWin(cb, contentWindow);
-        native(() => {
-            contentWindow.frameElement.addEventListenerN('load', function() {
+        securely(() => {
+            contentWindow.frameElement.addEventListenerS('load', function() {
                 hook(win, [this], function() {
                     onWin(cb, contentWindow);
                 });
@@ -45,8 +45,8 @@ export default function onWin(cb, win = window) {
     }
 
     hookOpen(win, hookWin);
-    hookLoadSetters(win, native, hookWin);
-    hookDOMInserters(win, native, hookWin);
+    hookLoadSetters(win, securely, hookWin);
+    hookDOMInserters(win, securely, hookWin);
 
     cb(win);
 }
