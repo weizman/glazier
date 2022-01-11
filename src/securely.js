@@ -8,13 +8,13 @@ const config = {
     },
     prototypes: {
         'Map': ['get', 'set'],
-        'Node': ['nodeType', 'parentElement'],
+        'Node': ['nodeType', 'parentElement', 'toString'],
         'Document': [],
         'DocumentFragment': [],
         'Object': ['toString'],
         'Array': ['includes', 'push', 'slice'],
-        'Element': ['innerHTML'],
-        'HTMLElement': ['onload'],
+        'Element': ['innerHTML', 'toString'],
+        'HTMLElement': ['onload', 'toString'],
         'EventTarget': ['addEventListener'],
     }
 };
