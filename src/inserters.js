@@ -16,7 +16,7 @@ function getHook(win, native, cb) {
         const element = securely(() => this.parentElementS || this);
         resetOnloadAttributes(win, args, cb);
         handleHTML(win, args);
-        const ret = native.apply(this, args);
+        const ret = securely(() => native.applyS(this, args));
         const frames = getFramesArray(element, false);
         hook(win, frames, cb);
         hook(win, args, cb);
@@ -30,7 +30,7 @@ function hookDOMInserters(win, cb) {
         for (let i = 0; i < funcs.length; i++) {
             const func = funcs[i];
             securely(() => {
-                const desc = ObjectS.getOwnPropertyDescriptor(win[proto + 'S'].prototype, func);
+                const desc = ObjectS.getOwnPropertyDescriptor(win[proto].prototype, func);
                 const prop = desc.set ? 'set' : 'value';
                 desc[prop] = getHook(win, desc[prop], cb);
                 ObjectS.defineProperty(win[proto].prototype, func, desc);

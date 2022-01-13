@@ -15,11 +15,11 @@ function isTrustedHTML(node) {
 function getPrototype(node) {
     switch (securely(() => node.toStringS())) {
         case '[object HTMLDocument]':
-            return securely(() => window.DocumentS);
+            return securely(() => window.Document);
         case '[object DocumentFragment]':
-            return securely(() => window.DocumentFragmentS);
+            return securely(() => window.DocumentFragment);
         default:
-            return securely(() => window.ElementS);
+            return securely(() => window.Element);
     }
 }
 
@@ -51,9 +51,9 @@ function getFramesArray(element, includingParent) {
         return frames;
     }
 
-    const list = getPrototype(element).prototype.querySelectorAll.call(element, 'iframe,frame,object,embed');
+    const list = securely(() => getPrototype(element).prototype.querySelectorAllS.call(element, 'iframe,frame,object,embed'));
 
-    fillArrayUniques(frames, securely(() => list.sliceS()));
+    fillArrayUniques(frames, securely(() => Array.prototype.sliceS.call(list)));
     if (includingParent) {
         fillArrayUniques(frames, [element]);
     }
