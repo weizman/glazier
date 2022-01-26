@@ -4,10 +4,11 @@ const wins = [top];
 
 const config = {
     objects: {
-        'document': ['createElement', 'currentScript'],
+        'document': ['createElement'],
         'Object': ['defineProperty', 'getOwnPropertyDescriptor'],
     },
     prototypes: {
+        'Attr': ['localName', 'name', 'nodeName'],
         'String': ['toLowerCase'],
         'Function': ['apply', 'call', 'bind'],
         'Map': ['get', 'set'],

@@ -192,6 +192,52 @@ module.exports = handleHTML;
 
 /***/ }),
 
+/***/ 352:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var _require = __webpack_require__(733),
+    securely = _require.securely,
+    secureNewWin = _require.secureNewWin;
+
+var hook = __webpack_require__(228);
+
+var hookOpen = __webpack_require__(583);
+
+var hookLoadSetters = __webpack_require__(459);
+
+var hookDOMInserters = __webpack_require__(58);
+
+var callback;
+
+module.exports = function onWin(cb) {
+  var win = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : window;
+
+  function hookWin(contentWindow) {
+    onWin(cb, contentWindow);
+    securely(function () {
+      contentWindow.frameElement.addEventListenerS('load', function () {
+        hook(win, [this], function () {
+          onWin(cb, contentWindow);
+        });
+      });
+    });
+  }
+
+  callback = callback || cb;
+
+  if (callback !== cb) {
+    return;
+  }
+
+  secureNewWin(win);
+  hookOpen(win, hookWin);
+  hookLoadSetters(win, hookWin);
+  hookDOMInserters(win, hookWin);
+  cb(win, securely);
+};
+
+/***/ }),
+
 /***/ 58:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -351,10 +397,11 @@ var secure = __webpack_require__(983);
 var wins = [top];
 var config = {
   objects: {
-    'document': ['createElement', 'currentScript'],
+    'document': ['createElement'],
     'Object': ['defineProperty', 'getOwnPropertyDescriptor']
   },
   prototypes: {
+    'Attr': ['localName', 'name', 'nodeName'],
     'String': ['toLowerCase'],
     'Function': ['apply', 'call', 'bind'],
     'Map': ['get', 'set'],
@@ -503,6 +550,8 @@ var objects = __webpack_require__(586);
 
 var prototypes = __webpack_require__(587);
 
+var specifics = __webpack_require__(172);
+
 var allowNativesAccess = false;
 
 function shouldAllowNativesAccess() {
@@ -547,6 +596,7 @@ function secure(win) {
     securely(function () {
       objects(win, nativeWin, shouldAllowNativesAccess, config.objects || {});
       prototypes(win, nativeWin, shouldAllowNativesAccess, config.prototypes || {});
+      specifics(win, nativeWin, shouldAllowNativesAccess);
     });
   });
   return securely;
@@ -684,6 +734,25 @@ module.exports = function prototypes(win, nativeWin, shouldAllowNativesAccess, p
 
 /***/ }),
 
+/***/ 172:
+/***/ ((module) => {
+
+module.exports = function specifics(win, nativeWin, shouldAllowNativesAccess) {
+  var getDocumentCurrentScript = nativeWin['Object'].getOwnPropertyDescriptor(win.Document.prototype, 'currentScript').get.bind(win.document);
+  nativeWin['Object'].defineProperty(win.document, 'currentScript' + 'S', {
+    configurable: false,
+    get: function get() {
+      if (!shouldAllowNativesAccess()) {
+        return;
+      }
+
+      return getDocumentCurrentScript();
+    }
+  });
+};
+
+/***/ }),
+
 /***/ 626:
 /***/ ((module) => {
 
@@ -752,57 +821,47 @@ module.exports = function(dst, src = window, Object = window.Object) {
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__webpack_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__webpack_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be in strict mode.
 (() => {
 "use strict";
-
-;// CONCATENATED MODULE: ./src/index.js
-var _require = __webpack_require__(733),
-    securely = _require.securely,
-    secureNewWin = _require.secureNewWin;
-
-var hook = __webpack_require__(228);
-
-var hookOpen = __webpack_require__(583);
-
-var hookLoadSetters = __webpack_require__(459);
-
-var hookDOMInserters = __webpack_require__(58);
-
-var callback;
-function onWin(cb) {
-  var win = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : window;
-
-  function hookWin(contentWindow) {
-    onWin(cb, contentWindow);
-    securely(function () {
-      contentWindow.frameElement.addEventListenerS('load', function () {
-        hook(win, [this], function () {
-          onWin(cb, contentWindow);
-        });
-      });
-    });
-  }
-
-  callback = callback || cb;
-
-  if (callback !== cb) {
-    return;
-  }
-
-  secureNewWin(win);
-  hookOpen(win, hookWin);
-  hookLoadSetters(win, hookWin);
-  hookDOMInserters(win, hookWin);
-  cb(win, securely);
-}
-;// CONCATENATED MODULE: ./build.js
+/* harmony import */ var _src_index__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(352);
+/* harmony import */ var _src_index__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_src_index__WEBPACK_IMPORTED_MODULE_0__);
 
 
 (function (win) {
   Object.defineProperty(win, 'GLAZE', {
-    value: onWin
+    value: (_src_index__WEBPACK_IMPORTED_MODULE_0___default())
   });
 })(window);
 })();

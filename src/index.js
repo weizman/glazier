@@ -6,7 +6,7 @@ const hookDOMInserters = require('./inserters');
 
 let callback;
 
-export default function onWin(cb, win = window) {
+module.exports = function onWin(cb, win = window) {
     function hookWin(contentWindow) {
         onWin(cb, contentWindow);
         securely(() => {
