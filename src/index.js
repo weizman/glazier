@@ -4,6 +4,8 @@ const hookOpen = require('./open');
 const hookLoadSetters = require('./listeners');
 const hookDOMInserters = require('./inserters');
 
+let callback;
+
 export default function onWin(cb, win = window) {
     function hookWin(contentWindow) {
         onWin(cb, contentWindow);
@@ -16,11 +18,16 @@ export default function onWin(cb, win = window) {
         });
     }
 
+    callback = callback || cb;
+    if (callback !== cb) {
+        return;
+    }
+
     secureNewWin(win);
 
     hookOpen(win, hookWin);
     hookLoadSetters(win, hookWin);
     hookDOMInserters(win, hookWin);
 
-    cb(win);
+    cb(win, securely);
 }

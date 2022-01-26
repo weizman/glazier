@@ -4,19 +4,21 @@ const wins = [top];
 
 const config = {
     objects: {
-        'document': ['createElement'],
+        'document': ['createElement', 'currentScript'],
         'Object': ['defineProperty', 'getOwnPropertyDescriptor'],
     },
     prototypes: {
-        'Function': ['apply'],
+        'String': ['toLowerCase'],
+        'Function': ['apply', 'call', 'bind'],
         'Map': ['get', 'set'],
         'Node': ['nodeType', 'parentElement', 'toString'],
         'Document': ['querySelectorAll'],
         'DocumentFragment': ['querySelectorAll', 'toString'],
         'Object': ['toString'],
         'Array': ['includes', 'push', 'slice'],
-        'Element': ['innerHTML', 'toString', 'querySelectorAll', 'getAttribute', 'removeAttribute'],
+        'Element': ['innerHTML', 'toString', 'querySelectorAll', 'getAttribute', 'removeAttribute', 'tagName'],
         'HTMLElement': ['onload', 'toString'],
+        'HTMLScriptElement': ['src'],
         'EventTarget': ['addEventListener'],
     }
 };

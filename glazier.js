@@ -351,19 +351,21 @@ var secure = __webpack_require__(983);
 var wins = [top];
 var config = {
   objects: {
-    'document': ['createElement'],
+    'document': ['createElement', 'currentScript'],
     'Object': ['defineProperty', 'getOwnPropertyDescriptor']
   },
   prototypes: {
-    'Function': ['apply'],
+    'String': ['toLowerCase'],
+    'Function': ['apply', 'call', 'bind'],
     'Map': ['get', 'set'],
     'Node': ['nodeType', 'parentElement', 'toString'],
     'Document': ['querySelectorAll'],
     'DocumentFragment': ['querySelectorAll', 'toString'],
     'Object': ['toString'],
     'Array': ['includes', 'push', 'slice'],
-    'Element': ['innerHTML', 'toString', 'querySelectorAll', 'getAttribute', 'removeAttribute'],
+    'Element': ['innerHTML', 'toString', 'querySelectorAll', 'getAttribute', 'removeAttribute', 'tagName'],
     'HTMLElement': ['onload', 'toString'],
+    'HTMLScriptElement': ['src'],
     'EventTarget': ['addEventListener']
   }
 };
@@ -507,11 +509,33 @@ function shouldAllowNativesAccess() {
   return allowNativesAccess;
 }
 
-function native(win, cb) {
+function natively(win, cb) {
   var ifr = win.document.createElement('iframe');
   win.document.head.appendChild(ifr);
   cb(ifr.contentWindow);
   ifr.parentElement.removeChild(ifr);
+}
+
+function securely(cb, a, b, c, d, e, f, g, h, i, j) {
+  var state = allowNativesAccess;
+  allowNativesAccess = true;
+  var ret, err;
+
+  try {
+    ret = cb(a, b, c, d, e, f, g, h, i, j);
+  } catch (e) {
+    err = e;
+  }
+
+  if (!state) {
+    allowNativesAccess = false;
+  }
+
+  if (err) {
+    throw err;
+  }
+
+  return ret;
 }
 
 function secure(win) {
@@ -519,31 +543,13 @@ function secure(win) {
     objects: {},
     prototypes: {}
   };
-  native(win, function (nativeWin) {
-    objects(win, nativeWin, shouldAllowNativesAccess, config.objects);
-    prototypes(win, nativeWin, shouldAllowNativesAccess, config.prototypes);
+  natively(win, function (nativeWin) {
+    securely(function () {
+      objects(win, nativeWin, shouldAllowNativesAccess, config.objects || {});
+      prototypes(win, nativeWin, shouldAllowNativesAccess, config.prototypes || {});
+    });
   });
-  return function securely(cb, a, b, c, d, e, f, g, h, i, j) {
-    var state = allowNativesAccess;
-    allowNativesAccess = true;
-    var ret, err;
-
-    try {
-      ret = cb(a, b, c, d, e, f, g, h, i, j);
-    } catch (e) {
-      err = e;
-    }
-
-    if (!state) {
-      allowNativesAccess = false;
-    }
-
-    if (err) {
-      throw err;
-    }
-
-    return ret;
-  };
+  return securely;
 }
 
 module.exports = secure;
@@ -588,9 +594,20 @@ module.exports = function objects(win, nativeWin, shouldAllowNativesAccess, obje
 /***/ 587:
 /***/ ((module) => {
 
+function zzz(func, shouldAllowNativesAccess) {
+  return function (a, b, c, d, e) {
+    if (!shouldAllowNativesAccess()) {
+      return;
+    }
+
+    return func(this, a, b, c, d, e);
+  };
+}
+
 function xxx(nativeWin, desc, shouldAllowNativesAccess) {
   var value = desc.value;
-  var set = desc.set;
+
+  var set = desc.set || function () {};
 
   var get = desc.get || function () {
     return value;
@@ -601,23 +618,8 @@ function xxx(nativeWin, desc, shouldAllowNativesAccess) {
   delete desc.writable;
   var getter = nativeWin['Function'].prototype.call.bind(get);
   var setter = nativeWin['Function'].prototype.call.bind(set);
-
-  desc.get = function (a, b, c, d, e) {
-    if (!shouldAllowNativesAccess()) {
-      return;
-    }
-
-    return getter(this, a, b, c, d, e);
-  };
-
-  desc.set = set && function (a, b, c, d, e) {
-    if (!shouldAllowNativesAccess()) {
-      return;
-    }
-
-    return setter(this, a, b, c, d, e);
-  };
-
+  desc.get = zzz(getter, shouldAllowNativesAccess);
+  desc.set = zzz(setter, shouldAllowNativesAccess);
   return desc;
 }
 
@@ -671,6 +673,7 @@ module.exports = function prototypes(win, nativeWin, shouldAllowNativesAccess, p
     for (var i = 0; i < properties.length; i++) {
       var property = properties[i];
       yyy(win, nativeWin, done, shouldAllowNativesAccess, prototype, property);
+      yyy(win, nativeWin, done, shouldAllowNativesAccess, prototype + 'S', property);
     }
   };
 
@@ -767,6 +770,7 @@ var hookLoadSetters = __webpack_require__(459);
 
 var hookDOMInserters = __webpack_require__(58);
 
+var callback;
 function onWin(cb) {
   var win = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : window;
 
@@ -781,11 +785,17 @@ function onWin(cb) {
     });
   }
 
+  callback = callback || cb;
+
+  if (callback !== cb) {
+    return;
+  }
+
   secureNewWin(win);
   hookOpen(win, hookWin);
   hookLoadSetters(win, hookWin);
   hookDOMInserters(win, hookWin);
-  cb(win);
+  cb(win, securely);
 }
 ;// CONCATENATED MODULE: ./build.js
 
