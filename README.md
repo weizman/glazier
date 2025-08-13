@@ -1,3 +1,8 @@
+
+
+> [!CAUTION]
+> Glazier became SnowJS under the LavaMoat project and can be found at https://github.com/lavamoat/snow (Glazier was not continued)
+
 # Let Glazier <img width=25 src="https://github.githubassets.com/images/icons/emoji/unicode/1fa9f.png"/> Install Your New Windows!
 
 With `Glazier` you can register to the creation event of any newborn window in the webpage
